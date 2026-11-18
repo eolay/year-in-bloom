@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#faf6ed">
+  <meta name="description" content="Соберите события года в ботанический орнамент и скачайте свою открытку.">
+  <title>Год в цветах</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Manrope:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="./styles.css">
+  <script src="./ornament.js" defer></script>
+  <script src="./app.js" defer></script>
+</head>
+<body>
+  <a class="skip" href="#studio">К созданию открытки</a>
+  <header class="masthead frame">
+    Дата-арт проект от Data-comics
+  </header>
+  <main class="frame">
+    <section class="hero" aria-labelledby="title">
+      <div class="hero-copy">
+        <h1 id="title">Год в <br>цветах<span>.</span></h1>
+        <p>Вспомните моменты года. Каждый из них станет цветком в вашей открытке.</p>
+        <div class="hero-actions">
+          <a class="button primary" id="start" href="#studio">Собрать открытку <span aria-hidden="true">↘</span></a>
+          <a class="text-link" id="open-example" href="#result">Посмотреть пример</a>
+        </div>
+      </div>
+      <div class="hero-art">
+        <canvas id="hero-card" width="1080" height="1350" role="img"
+          aria-label="Ботаническая открытка из пятнадцати событий"></canvas>
+      </div>
+    </section>
+
+    <section class="studio" id="studio" aria-labelledby="studio-title">
+      <div class="studio-heading">
+        <h2 id="studio-title">Соберите свой год</h2>
+        <div class="switch" role="group" aria-label="Данные открытки">
+          <button id="use-mine" type="button" aria-pressed="true">Мои события</button>
+          <button id="use-example" type="button" aria-pressed="false">Пример</button>
+        </div>
+      </div>
+
+      <div class="studio-grid">
+        <div class="editor">
+          <div class="identity-fields">
+            <div class="field">
+              <label for="author">Имя на открытке</label>
+              <input id="author" type="text" autocomplete="name" placeholder="Как вас подписать?">
+            </div>
+            <div class="field">
+              <label for="year">Год</label>
+              <input id="year" type="text" inputmode="numeric" maxlength="4" autocomplete="off"
+                aria-describedby="year-feedback">
+              <small id="year-feedback" class="error" aria-live="polite" hidden>Введите год из четырёх цифр.</small>
+            </div>
+          </div>
+
+          <form id="event-form" novalidate>
+            <h3 id="event-title">Новый момент</h3>
+            <div class="field-pair">
+              <div class="field">
+                <label for="month">Месяц</label>
+                <select id="month" required><option value="">Выберите</option></select>
+              </div>
+              <div class="field">
+                <label for="theme">Тема</label>
+                <select id="theme" required><option value="">Выберите</option></select>
+              </div>
+            </div>
+            <div class="field">
+              <label for="caption">Короткая подпись <span class="optional">по желанию</span></label>
+              <input id="caption" type="text" placeholder="Например, снова рисую" aria-describedby="caption-feedback">
+              <small id="caption-feedback" aria-live="polite">0 / 24</small>
+            </div>
+            <p id="event-feedback" class="error" role="alert" hidden></p>
+            <div class="row form-actions">
+              <button class="button primary" id="event-submit" type="submit">Добавить момент</button>
+              <button class="button quiet" id="event-cancel" type="button" hidden>Отмена</button>
+              <a class="button quiet compact-jump" id="jump-to-card" href="#result" hidden>К открытке ↓</a>
+            </div>
+          </form>
+
+          <section class="event-section" aria-labelledby="event-list-title">
+            <div class="section-line">
+              <h3 id="event-list-title">События года</h3>
+              <output id="event-count" aria-live="polite"></output>
+            </div>
+            <p class="muted" id="empty-list">Добавьте хотя бы один момент, чтобы увидеть узор.</p>
+            <ul id="event-list"></ul>
+          </section>
+
+          <details class="advanced">
+            <summary>Расширенные настройки</summary>
+            <div class="field">
+              <label for="font-size">Размер подписей <output id="font-value" for="font-size"></output></label>
+              <input id="font-size" type="range" min="12" max="16" step=".5" value="13.5">
+            </div>
+            <div class="field">
+              <label for="flower-size">Размер цветков <output id="flower-value" for="flower-size"></output></label>
+              <input id="flower-size" type="range" min="45" max="185" value="112">
+            </div>
+            <div class="field">
+              <label for="author-size">Размер имени на «Загадке» <output id="author-value" for="author-size"></output></label>
+              <input id="author-size" type="range" min="65" max="165" value="100">
+            </div>
+          </details>
+        </div>
+
+        <div class="result" id="result" aria-labelledby="result-title">
+          <div class="section-line">
+            <h3 id="result-title">Открытка</h3>
+            <div class="switch" role="group" aria-label="Версия открытки">
+              <button id="view-cover" type="button" aria-pressed="true">Загадка</button>
+              <button id="view-reveal" type="button" aria-pressed="false">Разгадка</button>
+            </div>
+          </div>
+          <div class="result-pickers">
+            <div class="field">
+              <label for="palette">Стиль</label>
+              <select id="palette"></select>
+            </div>
+            <div class="field format">
+              <label for="format">Формат</label>
+              <select id="format">
+                <option value="post">Пост · 4:5</option>
+                <option value="square">Квадрат · 1:1</option>
+                <option value="story">Сторис · 9:16</option>
+              </select>
+            </div>
+          </div>
+          <div class="pattern-actions">
+            <button class="button quiet" id="remix" type="button" disabled>Другой узор</button>
+          </div>
+          <div id="card-well">
+            <canvas id="card" width="1080" height="1350" role="img" hidden></canvas>
+            <div id="placeholder">
+              <span class="flower-symbol" aria-hidden="true">✿</span>
+              <p>Здесь вырастет ваш венок</p>
+            </div>
+          </div>
+          <div class="page-controls" id="card-pages" hidden>
+            <button class="button quiet" id="previous" type="button" aria-label="Предыдущая страница">←</button>
+            <output id="card-page" aria-live="polite"></output>
+            <button class="button quiet" id="next" type="button" aria-label="Следующая страница">→</button>
+          </div>
+          <div class="row card-actions">
+            <button class="button primary" id="download" type="button" disabled>Скачать PNG</button>
+            <button class="button quiet" id="share" type="button" hidden>Поделиться</button>
+          </div>
+          <p id="result-status" class="muted" role="status"></p>
+        </div>
+      </div>
+    </section>
+    <noscript><p>Включите JavaScript в браузере, чтобы создать открытку.</p></noscript>
+  </main>
+  <footer class="footer frame">
+    <a class="text-link" href="https://datavisualizationstudio.com/dataartbase" target="_blank" rel="noopener">Что такое дата-арт?</a>
+    <a class="text-link" href="https://t.me/+jaHXo5ZiD55hMWIy" target="_blank" rel="noopener">@datavizcomics</a>
+  </footer>
+</body>
+</html>
