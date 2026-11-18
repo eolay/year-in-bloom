@@ -228,7 +228,6 @@ input[type="range"] { cursor: pointer; accent-color: var(--teal); max-width: 290
 #result-status:not(:empty) { margin-top: 9px; }
 .footer {
   display: flex;
-  justify-content: space-between;
   align-items: baseline;
   gap: 8px 20px;
   flex-wrap: wrap;
