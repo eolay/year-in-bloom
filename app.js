@@ -245,15 +245,20 @@
   }
 
   function chooseMode(newMode) {
-    if (mode !== newMode) {
-      mode = newMode;
-      side = mode === "example" ? "reveal" : "cover";
-      page = 0;
-      syncControls();
-      clearForm();
-      renderEvents();
-      renderResult();
+    if (mode === newMode) {
+      if (newMode === "example") {
+        page = 0;
+        setSide("cover");
+      }
+      return;
     }
+    mode = newMode;
+    side = "cover";
+    page = 0;
+    syncControls();
+    clearForm();
+    renderEvents();
+    renderResult();
   }
 
   function setSide(next) {
