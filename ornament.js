@@ -18,80 +18,79 @@
     ? new Intl.Segmenter("ru", {granularity: "grapheme"}) : null;
   const months = ["Январь", "Февраль", "Март", "Апрель", "Май", "Июнь", "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"];
   const paletteNames = {"cobalt":"Кобальт и мандарин","herbarium":"Дымчато-синий гербарий","blue-poppy":"Голубой мак","lagoon":"Бирюза и коралл","meadow":"Полевой венок","rose":"Розовая ветка","porcelain":"Кобальтовая роспись","raspberry":"Бирюза, олива и малина","saffron":"Маки и шафран","scrollwork":"Бирюзовые завитки"};
-  const themes = ["Работа", "Учёба", "Семья", "Хобби", "Друзья", "Поездки", "Перемены", "Радости"];
-  const excludedLegendThemes = new Set(["Перемены", "Радости"]);
+  const themes = ["Работа", "Учёба", "Семья", "Хобби", "Друзья", "Поездки"];
   const palettes = {
     cobalt: {
       ground: "#192671", edge: "#10194a", shade: "#283d94", text: "#fff0cf", stem: "#e1cf79",
       leaf: ["#a6c7ff", "#748ee5", "#e1e69b", "#fce29d"], detail: "#feeeb7",
-      petal: ["#ff9c63", "#aec8ff", "#f9db6d", "#ff7169", "#ee9fcc", "#78dfd9", "#bbadf4", "#ffdda6"],
+      petal: ["#ff9c63", "#aec8ff", "#f9db6d", "#ff7169", "#ee9fcc", "#78dfd9"],
       style: "engraved", foliage: 40, weight: 1.4, length: 1.0, dark: true
     },
     herbarium: {
       ground: "#f1f2ed", edge: "#314952", shade: "#ffffff", text: "#283e49", stem: "#607882",
       leaf: ["#708b95", "#9cb1b9", "#536e79", "#adb8af"], detail: "#bed0d4",
-      petal: ["#5f8192", "#96b5be", "#698897", "#466879", "#8ea1a8", "#749ba5", "#648694", "#a1aba9"],
+      petal: ["#5f8192", "#96b5be", "#698897", "#466879", "#8ea1a8", "#749ba5"],
       style: "wash", foliage: 64, weight: 1.15, length: 1.22, beads: 2
     },
     "blue-poppy": {
       ground: "#faf5e9", edge: "#3e5e6c", shade: "#fffcf5", text: "#284958", stem: "#a28c58",
       leaf: ["#8b9f97", "#a3b9ba", "#87a1aa", "#c0b89e"], detail: "#e8cc88",
-      petal: ["#779aa7", "#91b4bd", "#869bab", "#5f90a5", "#849cad", "#a0b7b7", "#64889a", "#a1b6c1"],
+      petal: ["#779aa7", "#91b4bd", "#869bab", "#5f90a5", "#849cad", "#a0b7b7"],
       style: "wash", foliage: 27, weight: .91, length: 1.35, breadth: 1.35
     },
     lagoon: {
       ground: "#f8faf5", edge: "#284758", shade: "#fffefa", text: "#184754", stem: "#27656d",
       leaf: ["#379e9e", "#6a9c6f", "#646084", "#9ec4a0"], detail: "#e5a245",
-      petal: ["#e1744e", "#428f9e", "#735a8b", "#dc643c", "#d3847d", "#2b8c8e", "#7378b4", "#eb9a4c"],
+      petal: ["#e1744e", "#428f9e", "#735a8b", "#dc643c", "#d3847d", "#2b8c8e"],
       style: "wash", foliage: 42, weight: 1.4, length: 1.04, clouds: 1
     },
     meadow: {
       ground: "#faf8f2", edge: "#5d6376", shade: "#fffefa", text: "#354a50", stem: "#85938a",
       leaf: ["#718d7e", "#a1af90", "#779399", "#a59aab"], detail: "#dfc479",
-      petal: ["#cf8d9c", "#7478aa", "#a1b1bf", "#be7196", "#a16a9e", "#7c9aab", "#7f6e99", "#d3a268"],
+      petal: ["#cf8d9c", "#7478aa", "#a1b1bf", "#be7196", "#a16a9e", "#7c9aab"],
       style: "wash", foliage: 25, weight: .7, length: .79, beads: 3, airy: true
     },
     rose: {
       ground: "#fff8f3", edge: "#864854", shade: "#fffdfa", text: "#73394b", stem: "#ad8b61",
       leaf: ["#a46d73", "#b8988b", "#d3a79d", "#af9d84"], detail: "#e9bd9e",
-      petal: ["#d88a97", "#c78a9e", "#db9e91", "#d7848e", "#b97987", "#d6a08f", "#b77285", "#dfa08f"],
+      petal: ["#d88a97", "#c78a9e", "#db9e91", "#d7848e", "#b97987", "#d6a08f"],
       style: "wash", foliage: 23, weight: 1.05, length: .94, airy: true, breadth: 1.28
     },
     porcelain: {
       ground: "#fcf8ed", edge: "#122c60", shade: "#ffffff", text: "#17376d", stem: "#17427e",
       leaf: ["#1e4b88", "#3866a1", "#153d78", "#31558d"], detail: "#f5e8c8",
-      petal: ["#204880", "#406fac", "#335784", "#17427d", "#2b5996", "#527fae", "#10396e", "#45739d"],
+      petal: ["#204880", "#406fac", "#335784", "#17427d", "#2b5996", "#527fae"],
       style: "graphic", foliage: 46, weight: 2.25, length: 1.13, scroll: 1
     },
     raspberry: {
       ground: "#fbf7eb", edge: "#40533d", shade: "#fffef8", text: "#275952", stem: "#6b783f",
       leaf: ["#737e43", "#8e9c5a", "#4d6b46", "#a1a765"], detail: "#e2b447",
-      petal: ["#bc2d68", "#27837b", "#d34775", "#147e83", "#af396d", "#48a697", "#4c7581", "#ed8f70"],
+      petal: ["#bc2d68", "#27837b", "#d34775", "#147e83", "#af396d", "#48a697"],
       style: "engraved", foliage: 40, weight: 1.62, length: 1.06, scroll: 1
     },
     saffron: {
       ground: "#f4edd3", edge: "#252b25", shade: "#fff9e7", text: "#293c2c", stem: "#30382d",
       leaf: ["#16515e", "#57663d", "#7b8050", "#2b4644"], detail: "#edb548",
-      petal: ["#ba382c", "#d5882e", "#dc5134", "#ae2e27", "#d96c48", "#315a68", "#be543d", "#dab043"],
+      petal: ["#ba382c", "#d5882e", "#dc5134", "#ae2e27", "#d96c48", "#315a68"],
       style: "graphic", foliage: 39, weight: 2.25, length: 1.0, breadth: 1.17
     },
     scrollwork: {
       ground: "#f5eed8", edge: "#176064", shade: "#fff8e9", text: "#204e52", stem: "#13767c",
       leaf: ["#137b80", "#407948", "#538557", "#2b9090"], detail: "#ffd578",
-      petal: ["#e3802c", "#3d91a8", "#cdb05f", "#65aebd", "#cb7544", "#258a9c", "#cc9c2d", "#5d9db1"],
+      petal: ["#e3802c", "#3d91a8", "#cdb05f", "#65aebd", "#cb7544", "#258a9c"],
       style: "graphic", foliage: 28, weight: 3.15, length: 1.1, scroll: 2
     }
   };
 
   const examples = [
     [0, "Запустила проект"], [1, "Закончила курс"], [2, "Собрались вместе"], [3, "Снова рисую"],
-    [4, "Увидела подругу"], [5, "Доехала до моря"], [6, "Свой дом"], [7, "Прогулка в дождь"],
+    [4, "Увидела подругу"], [5, "Доехала до моря"],
     [0, "Первый доклад"], [1, "Сдала экзамен"], [2, "Пирог с мамой"], [3, "Слепила вазу"],
-    [4, "Устроили пикник"], [5, "Увидела горы"], [6, "Сменила профессию"], [7, "Читала на балконе"],
+    [4, "Устроили пикник"], [5, "Увидела горы"],
     [0, "Собрала команду"], [1, "Освоила новый язык"], [2, "Побывали у бабушки"], [3, "Сыграла на сцене"],
-    [4, "Сходили на концерт"], [5, "Ночь в поезде"], [6, "Начала всё с начала"], [7, "Завела кота"],
+    [4, "Сходили на концерт"], [5, "Ночь в поезде"],
     [0, "Получила оффер"], [1, "Защитила диплом"], [2, "Семейное фото"], [3, "Сшила себе платье"],
-    [4, "Гуляла с Ниной"], [5, "Поставили палатку"], [6, "Сменила район"], [7, "Увидела первый снег"]
+    [4, "Гуляла с Ниной"], [5, "Поставили палатку"]
   ];
 
   function seededRandom(value) {
@@ -166,9 +165,7 @@
       {count: [4, 6], breadth: .47, crown: 1.11, halo: false},
       {count: [6, 8], breadth: .62, crown: 1.10, halo: true},
       {count: [4, 5], breadth: .37, crown: 1.03, halo: false},
-      {count: [3, 4], breadth: .53, crown: .73, halo: true},
-      {count: [5, 6], breadth: .28, crown: .66, halo: true},
-      {count: [9, 12], breadth: .22, crown: .91, halo: false}
+      {count: [3, 4], breadth: .53, crown: .73, halo: true}
     ];
     const motif = motifs[kind];
     const count = motif.count[0] + Math.floor(random() * (motif.count[1] - motif.count[0] + 1));
@@ -744,9 +741,7 @@
     for (const label of labels) drawLabel(ctx, label, palette);
 
     if (page === 0) {
-      const used = Array.from(new Set(layout.points.map(point => point.theme)))
-        .filter(kind => !excludedLegendThemes.has(themes[kind]))
-        .sort((a, b) => a - b);
+      const used = Array.from(new Set(layout.points.map(point => point.theme))).sort((a, b) => a - b);
       drawLegend(ctx, used, palette, layout.seed, geometry);
     }
     return labels.map(({point}) => months[point.month] + ", " + themes[point.theme] + " — " + point.label).join(". ");

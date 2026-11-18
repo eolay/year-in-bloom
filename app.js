@@ -63,11 +63,13 @@
       const validEvents = stored.events.filter(event => {
         if (!event || !Number.isSafeInteger(event.id) || seen.has(event.id) ||
             !Number.isInteger(event.month) || event.month < 0 || event.month >= art.months.length ||
-            !Number.isInteger(event.theme) || event.theme < 0 || event.theme >= art.themes.length ||
             typeof event.label !== "string") return false;
         seen.add(event.id);
         return true;
-      }).slice(0, art.maxEvents).map(({id, month, theme, label}) => ({id, month, theme, label}));
+      }).slice(0, art.maxEvents).map(({id, month, theme, label}) => ({
+        id, month, label,
+        theme: Number.isInteger(theme) && theme >= 0 && theme < art.themes.length ? theme : null
+      }));
       const saved = stored.appearance || {};
       return {
         author: typeof stored.author === "string" ? art.cleanAuthor(stored.author) : "",
@@ -171,6 +173,10 @@
     return result;
   }
 
+  function eventTitle(event) {
+    return event.label || art.themes[event.theme] || "Событие без темы";
+  }
+
   function makeEventButton(action, event, label, symbol) {
     const button = document.createElement("button");
     button.type = "button";
@@ -178,7 +184,7 @@
     button.dataset.action = action;
     button.dataset.id = event.id;
     button.textContent = symbol;
-    button.setAttribute("aria-label", label + " «" + (event.label || art.themes[event.theme]) + "»");
+    button.setAttribute("aria-label", label + " «" + eventTitle(event) + "»");
     return button;
   }
 
@@ -190,9 +196,9 @@
       const copy = document.createElement("div");
       copy.className = "event-copy";
       const name = document.createElement("strong");
-      name.textContent = event.label || art.themes[event.theme];
+      name.textContent = eventTitle(event);
       const detail = document.createElement("small");
-      detail.textContent = art.months[event.month] + " · " + art.themes[event.theme];
+      detail.textContent = art.months[event.month] + " · " + (art.themes[event.theme] ?? "Без темы");
       copy.append(name, detail);
       const actions = document.createElement("div");
       actions.className = "event-actions";
@@ -210,7 +216,8 @@
 
   function renderResult() {
     const draft = current();
-    const design = art.prepare(draft.events, draft.appearance, side === "reveal" ? labelMeasure : null);
+    const eventsWithThemes = draft.events.filter(event => event.theme !== null);
+    const design = art.prepare(eventsWithThemes, draft.appearance, side === "reveal" ? labelMeasure : null);
     const total = design?.pages.length || 0;
     page = Math.min(Math.max(0, page), Math.max(0, total - 1));
     get("view-cover").setAttribute("aria-pressed", String(side === "cover"));
@@ -225,7 +232,9 @@
     get("card-page").textContent = (page + 1) + " / " + total;
     get("previous").disabled = page === 0;
     get("next").disabled = page + 1 >= total;
-    status.textContent = "";
+    status.textContent = eventsWithThemes.length < draft.events.length
+      ? "Выберите темы для событий с пометкой «Без темы», чтобы они появились в узоре."
+      : "";
     clearTimeout(shareTimer);
     const version = ++renderVersion;
     shareImage = null;
@@ -318,7 +327,7 @@
 
     editing = item.id;
     month.value = item.month;
-    theme.value = item.theme;
+    theme.value = item.theme ?? "";
     caption.value = item.label;
     errorNotice.hidden = true;
     month.removeAttribute("aria-invalid");
