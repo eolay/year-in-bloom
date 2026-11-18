@@ -6,7 +6,7 @@
   const maxLabelWidth = 97;
   const maxCharacters = 24;
   const maxEvents = 60;
-  const minCaptionSize = 12;
+  const minCaptionSize = 8;
   const maxCaptionSize = 16;
   const maxAuthorLength = 44;
   const formatHeights = {square: 1080, post: 1350, story: 1920};
@@ -19,6 +19,7 @@
   const months = ["Январь", "Февраль", "Март", "Апрель", "Май", "Июнь", "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"];
   const paletteNames = {"cobalt":"Кобальт и мандарин","herbarium":"Дымчато-синий гербарий","blue-poppy":"Голубой мак","lagoon":"Бирюза и коралл","meadow":"Полевой венок","rose":"Розовая ветка","porcelain":"Кобальтовая роспись","raspberry":"Бирюза, олива и малина","saffron":"Маки и шафран","scrollwork":"Бирюзовые завитки"};
   const themes = ["Работа", "Учёба", "Семья", "Хобби", "Друзья", "Поездки", "Перемены", "Радости"];
+  const excludedLegendThemes = new Set(["Перемены", "Радости"]);
   const palettes = {
     cobalt: {
       ground: "#192671", edge: "#10194a", shade: "#283d94", text: "#fff0cf", stem: "#e1cf79",
@@ -548,14 +549,15 @@
     const fontSize = preferred ? size : minCaptionSize;
     const lines = preferred || fitLabel(ctx, point.label, fontSize) || [point.label];
     const month = months[point.month];
-    ctx.font = "600 10px Manrope, sans-serif";
+    const monthSize = Math.max(7, Math.min(10, fontSize - 2));
+    ctx.font = labelFont(monthSize);
     const monthWidth = ctx.measureText(month).width;
     ctx.font = labelFont(fontSize);
     const lineHeight = fontSize + 1;
     const lineWidth = Math.max(0, ...lines.map(value => ctx.measureText(value).width));
-    return {lines, month, fontSize, lineHeight,
+    return {lines, month, monthSize, fontSize, lineHeight,
       width: Math.ceil(Math.max(monthWidth, Math.min(maxLabelWidth, lineWidth))),
-      height: Math.ceil(11 + lines.length * lineHeight)};
+      height: Math.ceil(monthSize + 1 + lines.length * lineHeight)};
   }
 
   function captionCandidates(point, caption, flowers, geometry) {
@@ -675,14 +677,15 @@
     ctx.textAlign = label.align;
     ctx.strokeStyle = palette.ground;
     ctx.lineWidth = 2.3;
-    ctx.font = "600 10px Manrope, sans-serif";
-    ctx.strokeText(label.month, x, label.y + 8);
+    ctx.font = labelFont(label.monthSize);
+    const monthY = label.y + label.monthSize - 2;
+    ctx.strokeText(label.month, x, monthY);
     ctx.fillStyle = ink;
-    ctx.fillText(label.month, x, label.y + 8);
+    ctx.fillText(label.month, x, monthY);
     ctx.font = labelFont(label.fontSize);
     ctx.fillStyle = palette.text;
     label.lines.forEach((value, i) => {
-      const y = label.y + 9 + (i + 1) * label.lineHeight;
+      const y = monthY + 1 + (i + 1) * label.lineHeight;
       ctx.strokeText(value, x, y, maxLabelWidth);
       ctx.fillText(value, x, y, maxLabelWidth);
     });
@@ -690,12 +693,13 @@
   }
 
   function drawLegend(ctx, used, palette, patternSeed, geometry) {
+    if (!used.length) return;
     rule(ctx, 26, 414, geometry.divider, palette.stem, .42);
-    const columns = Math.min(4, used.length);
+    const columns = 3;
     const columnWidth = 390 / columns;
     used.forEach((kind, i) => {
       const x = 24 + (i % columns) * columnWidth;
-      const y = geometry.divider + (used.length > 4 ? 19 + 23 * Math.floor(i / columns) : 27);
+      const y = geometry.divider + (used.length > columns ? 19 + 23 * Math.floor(i / columns) : 27);
       drawMoment(ctx, x + 10, y - 4, 7.3, kind, palette, patternSeed);
       text(ctx, themes[kind], x + 23, y, "600 14px Manrope, sans-serif", palette.text);
     });
@@ -726,7 +730,7 @@
 
   function drawReveal(ctx, layout, labels, palette, page, pageCount, geometry) {
     const selected = new Set(labels.map(label => label.point.id));
-    text(ctx, "Разгадка", 25, 53, '500 46px "Cormorant Garamond", Georgia, serif', palette.text);
+    text(ctx, "Разгадка", 25, 53, '500 32px "Cormorant Garamond", Georgia, serif', palette.text);
     if (pageCount > 1) {
       text(ctx, (page + 1) + " / " + pageCount, 414, 46, "600 13px Manrope, sans-serif", palette.text, "right");
     }
@@ -740,7 +744,9 @@
     for (const label of labels) drawLabel(ctx, label, palette);
 
     if (page === 0) {
-      const used = Array.from(new Set(layout.points.map(point => point.theme))).sort((a, b) => a - b);
+      const used = Array.from(new Set(layout.points.map(point => point.theme)))
+        .filter(kind => !excludedLegendThemes.has(themes[kind]))
+        .sort((a, b) => a - b);
       drawLegend(ctx, used, palette, layout.seed, geometry);
     }
     return labels.map(({point}) => months[point.month] + ", " + themes[point.theme] + " — " + point.label).join(". ");

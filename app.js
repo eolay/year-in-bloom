@@ -7,9 +7,9 @@
   const defaultAppearance = {
     palette: "lagoon",
     format: "post",
-    captionSize: 13.5,
+    captionSize: 12,
     flowerSize: 112,
-    authorSize: 100,
+    authorSize: 140,
     seed: 1664357835
   };
   const author = get("author");
