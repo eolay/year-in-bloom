@@ -12,13 +12,12 @@
   const formatHeights = {square: 1080, post: 1350, story: 1920};
   const channel = "@datavizcomics";
   const defaultYear = 2026;
-  const exampleName = "Александра";
+  const ru = window.BloomLocales.get("ru");
+  const exampleName = ru.exampleName;
   const labelFont = size => "600 " + size + "px Manrope, system-ui, sans-serif";
   const segmenter = typeof Intl.Segmenter === "function"
     ? new Intl.Segmenter("ru", {granularity: "grapheme"}) : null;
-  const months = ["Январь", "Февраль", "Март", "Апрель", "Май", "Июнь", "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"];
-  const paletteNames = {"cobalt":"Кобальт и мандарин","herbarium":"Дымчато-синий гербарий","blue-poppy":"Голубой мак","lagoon":"Бирюза и коралл","meadow":"Полевой венок","rose":"Розовая ветка","porcelain":"Кобальтовая роспись","raspberry":"Бирюза, олива и малина","saffron":"Маки и шафран","scrollwork":"Бирюзовые завитки"};
-  const themes = ["Работа", "Учёба", "Семья", "Хобби", "Друзья", "Поездки"];
+  const {months, paletteNames, themes} = ru;
   const palettes = {
     cobalt: {
       ground: "#192671", edge: "#10194a", shade: "#283d94", text: "#fff0cf", stem: "#e1cf79",
@@ -81,17 +80,6 @@
       style: "graphic", foliage: 28, weight: 3.15, length: 1.1, scroll: 2
     }
   };
-
-  const examples = [
-    [0, "Запустила проект"], [1, "Закончила курс"], [2, "Собрались вместе"], [3, "Снова рисую"],
-    [4, "Увидела подругу"], [5, "Доехала до моря"],
-    [0, "Первый доклад"], [1, "Сдала экзамен"], [2, "Пирог с мамой"], [3, "Слепила вазу"],
-    [4, "Устроили пикник"], [5, "Увидела горы"],
-    [0, "Собрала команду"], [1, "Освоила новый язык"], [2, "Побывали у бабушки"], [3, "Сыграла на сцене"],
-    [4, "Сходили на концерт"], [5, "Ночь в поезде"],
-    [0, "Получила оффер"], [1, "Защитила диплом"], [2, "Семейное фото"], [3, "Сшила себе платье"],
-    [4, "Гуляла с Ниной"], [5, "Поставили палатку"]
-  ];
 
   function seededRandom(value) {
     let state = value >>> 0;
@@ -339,9 +327,11 @@
     trace(ctx, [[x1, y], [x2, y]], color, .75, alpha);
   }
 
-  function sampleEvents(count = 15) {
+  function sampleEvents(count = 15, language = "ru") {
+    const examples = window.BloomLocales.get(language).examples;
     return Array.from({length: count}, (_, id) => {
-      const [theme, example] = examples[id % examples.length];
+      const example = examples[id % examples.length];
+      const theme = id % themes.length;
       const month = id < 4 ? id * 3 : (id - 4) % 12;
       return {id, theme, month, label: example};
     }).sort((a, b) => a.month - b.month || a.id - b.id);
@@ -540,12 +530,12 @@
       a.y < b.y + b.height + gap && a.y + a.height + gap > b.y;
   }
 
-  function measureCaption(ctx, point, size, limit = maxLabelWidth) {
+  function measureCaption(ctx, point, size, locale, limit = maxLabelWidth) {
     const preferred = fitLabel(ctx, point.label, size, limit);
     if (!preferred && limit !== maxLabelWidth) return null;
     const fontSize = preferred ? size : minCaptionSize;
     const lines = preferred || fitLabel(ctx, point.label, fontSize) || [point.label];
-    const month = months[point.month];
+    const month = locale.months[point.month];
     const monthSize = Math.max(7, Math.min(10, fontSize - 2));
     ctx.font = labelFont(monthSize);
     const monthWidth = ctx.measureText(month).width;
@@ -596,6 +586,7 @@
   }
 
   function makePages(ctx, layout, settings) {
+    const locale = window.BloomLocales.get(settings.language);
     const geometry = revealGeometry(settings.format);
     const flowers = layout.points.map(event => ({
       event,
@@ -604,10 +595,10 @@
       radius: event.size * geometry.scale * 1.21
     }));
     let pending = flowers.map(point => {
-      const caption = measureCaption(ctx, point.event, settings.captionSize);
+      const caption = measureCaption(ctx, point.event, settings.captionSize, locale);
       const alternatives = [caption];
       for (const limit of [79, 65]) {
-        const narrow = measureCaption(ctx, point.event, settings.captionSize, limit);
+        const narrow = measureCaption(ctx, point.event, settings.captionSize, locale, limit);
         if (narrow && narrow.width < alternatives.at(-1).width) alternatives.push(narrow);
       }
       return {point, caption, alternatives, candidates: []};
@@ -689,7 +680,7 @@
     ctx.restore();
   }
 
-  function drawLegend(ctx, used, palette, patternSeed, geometry) {
+  function drawLegend(ctx, used, palette, patternSeed, geometry, locale) {
     if (!used.length) return;
     rule(ctx, 26, 414, geometry.divider, palette.stem, .42);
     const columns = 3;
@@ -698,11 +689,11 @@
       const x = 24 + (i % columns) * columnWidth;
       const y = geometry.divider + (used.length > columns ? 19 + 23 * Math.floor(i / columns) : 27);
       drawMoment(ctx, x + 10, y - 4, 7.3, kind, palette, patternSeed);
-      text(ctx, themes[kind], x + 23, y, "600 14px Manrope, sans-serif", palette.text);
+      text(ctx, locale.themes[kind], x + 23, y, "600 14px Manrope, sans-serif", palette.text);
     });
   }
 
-  function drawCover(ctx, layout, palette, height, year) {
+  function drawCover(ctx, layout, palette, height, year, locale) {
     ctx.save();
     if (height === 440) {
       ctx.translate(220, 231);
@@ -712,7 +703,7 @@
       ctx.translate(0, (height - baseHeight) / 2);
     }
     drawWreath(ctx, layout, palette);
-    tracked(ctx, "ГОД В ЦВЕТАХ", 220, 246, 12, palette.text, 2.9, "center");
+    tracked(ctx, locale.coverTitle, 220, 246, 12, palette.text, 2.9, "center");
     const nearby = layout.points.filter(point => point.y + point.size * 1.24 >= 250
       && point.y - point.size * 1.24 <= 325);
     const safeHalfWidth = Math.min(119, ...nearby.map(point => Math.abs(point.x - 220) - point.size * 1.24 - 12));
@@ -725,9 +716,9 @@
     ctx.restore();
   }
 
-  function drawReveal(ctx, layout, labels, palette, page, pageCount, geometry) {
+  function drawReveal(ctx, layout, labels, palette, page, pageCount, geometry, locale) {
     const selected = new Set(labels.map(label => label.point.id));
-    text(ctx, "Разгадка", 25, 53, '500 32px "Cormorant Garamond", Georgia, serif', palette.text);
+    text(ctx, locale.revealTitle, 25, 53, '500 32px "Cormorant Garamond", Georgia, serif', palette.text);
     if (pageCount > 1) {
       text(ctx, (page + 1) + " / " + pageCount, 414, 46, "600 13px Manrope, sans-serif", palette.text, "right");
     }
@@ -742,9 +733,9 @@
 
     if (page === 0) {
       const used = Array.from(new Set(layout.points.map(point => point.theme))).sort((a, b) => a - b);
-      drawLegend(ctx, used, palette, layout.seed, geometry);
+      drawLegend(ctx, used, palette, layout.seed, geometry, locale);
     }
-    return labels.map(({point}) => months[point.month] + ", " + themes[point.theme] + " — " + point.label).join(". ");
+    return labels.map(({point}) => locale.months[point.month] + ", " + locale.themes[point.theme] + " — " + point.label).join(". ");
   }
 
   function prepare(events, settings, measure) {
@@ -767,6 +758,7 @@
   }
 
   function drawCard(canvas, design, settings) {
+    const locale = window.BloomLocales.get(settings.language);
     canvas.height = formatHeights[settings.format] || formatHeights.post;
     const ctx = canvas.getContext("2d");
     const ratio = canvas.width / width;
@@ -780,21 +772,24 @@
     ctx.translate(0, (height - geometry.height) / 2);
     if (settings.side === "reveal") {
       const page = Math.max(0, Math.min(settings.page, design.pages.length - 1));
-      const description = drawReveal(ctx, design.layout, design.pages[page], palette, page, design.pages.length, geometry);
-      canvas.setAttribute("aria-label", "Разгадка, страница " + (page + 1) + " из " + design.pages.length + ". " + description);
+      const description = drawReveal(ctx, design.layout, design.pages[page], palette, page, design.pages.length, geometry, locale);
+      const pageLabel = settings.language === "en" ? "Page " : "Страница ";
+      canvas.setAttribute("aria-label", locale.revealTitle + ". " + pageLabel + (page + 1) + " / " + design.pages.length + ". " + description);
     } else {
       const year = String(parseYear(settings.year) ?? defaultYear);
-      drawCover(ctx, design.layout, palette, geometry.height, year);
-      canvas.setAttribute("aria-label", "Год в цветах. " + year + ". Венок из " + design.layout.points.length + " событий.");
+      drawCover(ctx, design.layout, palette, geometry.height, year, locale);
+      const countLabel = settings.language === "en" ? "Moments: " : "Событий: ";
+      canvas.setAttribute("aria-label", locale.title + ". " + year + ". " + countLabel + design.layout.points.length + ".");
     }
     credits(ctx, palette, settings, geometry);
   }
 
-  function validateCaption(ctx, value) {
+  function validateCaption(ctx, value, language = "ru") {
+    const locale = window.BloomLocales.get(language);
     const label = cleanLabel(value);
     const length = splitGraphemes(label).length;
-    const error = length > maxCharacters ? "До 24 знаков с пробелами." :
-      fitLabel(ctx, label, maxCaptionSize) === null ? "Эта подпись шире двух строк. Сократите её." : "";
+    const error = length > maxCharacters ? locale.captionTooLong :
+      fitLabel(ctx, label, maxCaptionSize) === null ? locale.captionTooWide : "";
     return {label, length, error};
   }
 

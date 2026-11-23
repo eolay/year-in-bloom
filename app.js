@@ -4,6 +4,8 @@
   const art = window.YearInBloom;
   const get = id => document.getElementById(id);
   const storageKey = "year-in-bloom-2026-draft";
+  let language = initialLanguage();
+  const locale = () => window.BloomLocales.get(language);
   const defaultAppearance = {
     palette: "lagoon",
     format: "post",
@@ -35,12 +37,12 @@
   const labelMeasure = document.createElement("canvas").getContext("2d");
 
   let mine = restoreDraft();
-  const example = {
-    author: art.exampleName,
+  const examples = Object.fromEntries(["ru", "en"].map(code => [code, {
+    author: window.BloomLocales.get(code).exampleName,
     year: art.defaultYear,
-    events: art.sampleEvents(15),
+    events: art.sampleEvents(15, code),
     appearance: {...defaultAppearance}
-  };
+  }]));
   let mode = "mine";
   let side = "cover";
   let page = 0;
@@ -51,7 +53,82 @@
   const hasFileSharing = supportsFileSharing();
 
   function current() {
-    return mode === "mine" ? mine : example;
+    return mode === "mine" ? mine : examples[language];
+  }
+
+  function initialLanguage() {
+    const requested = new URL(location.href).searchParams.get("lang");
+    if (window.BloomLocales.supports(requested)) return requested;
+    try {
+      const remembered = localStorage.getItem("year-in-bloom-language");
+      if (window.BloomLocales.supports(remembered)) return remembered;
+    } catch {
+      // Language selection also works without storage.
+    }
+    return "ru";
+  }
+
+  function updateOptions(select, names, placeholder) {
+    const selected = select.value;
+    select.replaceChildren();
+    if (placeholder) addOption(select, "", locale().choose);
+    for (const [value, name] of Object.entries(names)) addOption(select, value, name);
+    select.value = selected;
+  }
+
+  function translatePage() {
+    const text = locale();
+    document.documentElement.lang = language;
+    document.title = text.title;
+    document.querySelector('meta[name="description"]').content = text.description;
+    document.querySelectorAll("[data-i18n]").forEach(element => {
+      element.textContent = text[element.dataset.i18n];
+    });
+    document.querySelectorAll("[data-i18n-html]").forEach(element => {
+      element.innerHTML = text[element.dataset.i18nHtml];
+    });
+    for (const attribute of ["aria-label", "placeholder"]) {
+      document.querySelectorAll("[data-i18n-" + attribute + "]").forEach(element => {
+        element.setAttribute(attribute, text[element.getAttribute("data-i18n-" + attribute)]);
+      });
+    }
+    document.querySelectorAll("[data-language]").forEach(button => {
+      button.setAttribute("aria-pressed", String(button.dataset.language === language));
+    });
+    updateOptions(month, text.months, true);
+    updateOptions(theme, text.themes, true);
+    updateOptions(palette, text.paletteNames, false);
+    const suffix = language === "en" ? "/en" : "";
+    document.querySelector('[data-i18n="dataArt"]').href = "https://datavisualizationstudio.com/dataartbase" + suffix;
+    document.querySelector('[data-i18n="process"]').href = "https://datavisualizationstudio.com/floweryear" + suffix;
+    document.querySelector('[data-i18n="creator"]').href = "https://datavisualizationstudio.com" + suffix;
+    get("event-title").textContent = editing === null ? text.newEvent : text.editEvent;
+    get("event-submit").textContent = editing === null ? text.add : text.save;
+    if (!errorNotice.hidden) errorNotice.textContent = text.chooseBoth;
+  }
+
+  function changeLanguage(next) {
+    if (next === language) return;
+    language = next;
+    try {
+      localStorage.setItem("year-in-bloom-language", language);
+    } catch {
+      // The current selection still applies when storage is disabled.
+    }
+    const url = new URL(location.href);
+    url.searchParams.set("lang", language);
+    history.replaceState(null, "", url);
+    if (mode === "example") {
+      page = 0;
+      syncControls();
+      clearForm();
+    }
+    translatePage();
+    renderRanges();
+    showCaptionLimit();
+    renderEvents();
+    renderHero();
+    renderResult();
   }
 
   function restoreDraft() {
@@ -119,9 +196,9 @@
   }
 
   function renderHero() {
-    const design = art.prepare(art.sampleEvents(15), defaultAppearance);
+    const design = art.prepare(art.sampleEvents(15, language), defaultAppearance);
     art.drawCard(get("hero-card"), design, {
-      ...defaultAppearance, side: "cover", page: 0, author: art.exampleName, year: art.defaultYear
+      ...defaultAppearance, language, side: "cover", page: 0, author: locale().exampleName, year: art.defaultYear
     });
   }
 
@@ -142,7 +219,7 @@
   }
 
   function renderRanges() {
-    get("font-value").textContent = new Intl.NumberFormat("ru-RU").format(fontSize.valueAsNumber);
+    get("font-value").textContent = new Intl.NumberFormat(language).format(fontSize.valueAsNumber);
     get("flower-value").textContent = flowerSize.value + "%";
     get("author-value").textContent = authorSize.value + "%";
   }
@@ -155,8 +232,8 @@
   function clearForm() {
     form.reset();
     editing = null;
-    get("event-title").textContent = "Новый момент";
-    get("event-submit").textContent = "Добавить момент";
+    get("event-title").textContent = locale().newEvent;
+    get("event-submit").textContent = locale().add;
     get("event-cancel").hidden = true;
     get("event-submit").disabled = current().events.length >= art.maxEvents;
     errorNotice.hidden = true;
@@ -166,7 +243,7 @@
   }
 
   function showCaptionLimit() {
-    const result = art.validateCaption(labelMeasure, caption.value);
+    const result = art.validateCaption(labelMeasure, caption.value, language);
     captionNotice.textContent = result.length + " / 24" + (result.error ? " · " + result.error : "");
     captionNotice.classList.toggle("error", Boolean(result.error));
     caption.setAttribute("aria-invalid", String(Boolean(result.error)));
@@ -174,7 +251,7 @@
   }
 
   function eventTitle(event) {
-    return event.label || art.themes[event.theme] || "Событие без темы";
+    return event.label || locale().themes[event.theme] || locale().unthemed;
   }
 
   function makeEventButton(action, event, label, symbol) {
@@ -198,13 +275,13 @@
       const name = document.createElement("strong");
       name.textContent = eventTitle(event);
       const detail = document.createElement("small");
-      detail.textContent = art.months[event.month] + " · " + (art.themes[event.theme] ?? "Без темы");
+      detail.textContent = locale().months[event.month] + " · " + (locale().themes[event.theme] ?? locale().noTheme);
       copy.append(name, detail);
       const actions = document.createElement("div");
       actions.className = "event-actions";
       actions.append(
-        makeEventButton("edit", event, "Редактировать", "✎"),
-        makeEventButton("remove", event, "Удалить", "×")
+        makeEventButton("edit", event, locale().edit, "✎"),
+        makeEventButton("remove", event, locale().remove, "×")
       );
       row.append(copy, actions);
       return row;
@@ -217,7 +294,7 @@
   function renderResult() {
     const draft = current();
     const eventsWithThemes = draft.events.filter(event => event.theme !== null);
-    const design = art.prepare(eventsWithThemes, draft.appearance, side === "reveal" ? labelMeasure : null);
+    const design = art.prepare(eventsWithThemes, {...draft.appearance, language}, side === "reveal" ? labelMeasure : null);
     const total = design?.pages.length || 0;
     page = Math.min(Math.max(0, page), Math.max(0, total - 1));
     get("view-cover").setAttribute("aria-pressed", String(side === "cover"));
@@ -233,7 +310,7 @@
     get("previous").disabled = page === 0;
     get("next").disabled = page + 1 >= total;
     status.textContent = eventsWithThemes.length < draft.events.length
-      ? "Выберите темы для событий с пометкой «Без темы», чтобы они появились в узоре."
+      ? locale().reassign
       : "";
     clearTimeout(shareTimer);
     const version = ++renderVersion;
@@ -241,7 +318,7 @@
     share.disabled = true;
     if (!design) return;
 
-    art.drawCard(canvas, design, {...draft.appearance, side, page, author: draft.author, year: draft.year});
+    art.drawCard(canvas, design, {...draft.appearance, language, side, page, author: draft.author, year: draft.year});
     if (hasFileSharing) {
       shareTimer = setTimeout(() => {
         canvas.toBlob(blob => {
@@ -284,7 +361,7 @@
     month.setAttribute("aria-invalid", String(missingMonth));
     theme.setAttribute("aria-invalid", String(missingTheme));
     if (missingMonth || missingTheme) {
-      errorNotice.textContent = "Выберите месяц и тему.";
+      errorNotice.textContent = locale().chooseBoth;
       errorNotice.hidden = false;
       (missingMonth ? month : theme).focus();
       return;
@@ -333,17 +410,20 @@
     month.removeAttribute("aria-invalid");
     theme.removeAttribute("aria-invalid");
     showCaptionLimit();
-    get("event-title").textContent = "Редактирование момента";
-    get("event-submit").textContent = "Сохранить";
+    get("event-title").textContent = locale().editEvent;
+    get("event-submit").textContent = locale().save;
     get("event-submit").disabled = false;
     get("event-cancel").hidden = false;
     moveToEditor();
   }
 
   function imageName() {
-    const type = side === "cover" ? "zagadka" : "razgadka-" + (page + 1);
+    const type = language === "en"
+      ? (side === "cover" ? "mystery" : "reveal-" + (page + 1))
+      : (side === "cover" ? "zagadka" : "razgadka-" + (page + 1));
     const draft = current();
-    return "god-v-tsvetah-" + draft.year + "-" + type + "-" + draft.appearance.format + ".png";
+    const prefix = language === "en" ? "year-in-bloom-" : "god-v-tsvetah-";
+    return prefix + draft.year + "-" + type + "-" + draft.appearance.format + ".png";
   }
 
   function downloadCard() {
@@ -351,7 +431,7 @@
     const name = imageName();
     canvas.toBlob(blob => {
       if (!blob) {
-        status.textContent = "Не удалось сохранить изображение. Попробуйте ещё раз.";
+        status.textContent = locale().downloadError;
         return;
       }
       const url = URL.createObjectURL(blob);
@@ -371,13 +451,13 @@
     try {
       await navigator.share({files: [file]});
     } catch (error) {
-      if (error.name !== "AbortError") status.textContent = "Воспользуйтесь кнопкой «Скачать PNG».";
+      if (error.name !== "AbortError") status.textContent = locale().shareError;
     }
   }
 
-  art.months.forEach((name, value) => addOption(month, value, name));
-  art.themes.forEach((name, value) => addOption(theme, value, name));
-  Object.entries(art.paletteNames).forEach(([value, name]) => addOption(palette, value, name));
+  document.querySelectorAll("[data-language]").forEach(button => {
+    button.addEventListener("click", () => changeLanguage(button.dataset.language));
+  });
   author.maxLength = art.maxAuthorLength;
 
   get("start").addEventListener("click", () => chooseMode("mine"));
@@ -438,10 +518,11 @@
     current().appearance.seed = crypto.getRandomValues(new Uint32Array(1))[0];
     saveDraft();
     renderResult();
-    status.textContent = "На открытке новый узор для тех же событий.";
+    status.textContent = locale().remixed;
   });
   download.addEventListener("click", downloadCard);
   share.addEventListener("click", shareCard);
+  translatePage();
   syncControls();
   clearForm();
   renderEvents();

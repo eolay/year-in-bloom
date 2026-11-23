@@ -38,11 +38,25 @@ button:disabled { cursor: default; opacity: .48; }
 .skip:focus { transform: none; }
 
 .masthead {
+  position: relative;
   border-bottom: 1px solid var(--line);
   padding-block: 25px 18px;
   text-align: center;
   font: 600 clamp(1.2rem, 2.5vw, 1.6rem)/1.15 var(--serif);
   overflow-wrap: anywhere;
+}
+.language-switch {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: var(--sans);
+}
+.masthead > span { display: block; padding-inline: 98px; }
+@media (max-width: 480px) {
+  .masthead { display: grid; justify-items: center; gap: 12px; }
+  .masthead > span { padding-inline: 0; }
+  .language-switch { position: static; transform: none; }
 }
 
 .hero {
