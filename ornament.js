@@ -10,7 +10,6 @@
   const maxCaptionSize = 16;
   const maxAuthorLength = 44;
   const formatHeights = {square: 1080, post: 1350, story: 1920};
-  const channel = "@datavizcomics";
   const defaultYear = 2026;
   const ru = window.BloomLocales.get("ru");
   const exampleName = ru.exampleName;
@@ -746,6 +745,7 @@
   }
 
   function credits(ctx, palette, settings, geometry) {
+    const locale = window.BloomLocales.get(settings.language);
     const author = settings.author;
     if (settings.side === "cover" && author) {
       const fontFamily = ' "Cormorant Garamond", Georgia, serif';
@@ -754,7 +754,7 @@
       const size = Math.min(standardSize, standardSize * 366 / ctx.measureText(author).width);
       text(ctx, author, width / 2, 51, '600 ' + size + 'px' + fontFamily, palette.text, "center");
     }
-    text(ctx, channel, 414, geometry.footer, "600 10px Manrope, sans-serif", palette.text, "right");
+    text(ctx, locale.imageCredit, 414, geometry.footer, "600 10px Manrope, sans-serif", palette.text, "right");
   }
 
   function drawCard(canvas, design, settings) {

@@ -249,6 +249,12 @@ input[type="range"] { cursor: pointer; accent-color: var(--teal); max-width: 290
   border-top: 1px solid var(--line);
 }
 .footer a:last-child { margin-inline-start: auto; }
+.inspiration {
+  margin-block: -12px 24px;
+  color: var(--muted);
+  font-size: .75rem;
+}
+.inspiration a { text-underline-offset: 3px; }
 
 @media (max-width: 1000px) {
   .frame { width: min(100% - 52px, 1180px); }

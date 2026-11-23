@@ -102,6 +102,7 @@
     document.querySelector('[data-i18n="dataArt"]').href = "https://datavisualizationstudio.com/dataartbase" + suffix;
     document.querySelector('[data-i18n="process"]').href = "https://datavisualizationstudio.com/floweryear" + suffix;
     document.querySelector('[data-i18n="creator"]').href = "https://datavisualizationstudio.com" + suffix;
+    document.querySelector('[data-i18n="socialLabel"]').href = text.socialUrl;
     get("event-title").textContent = editing === null ? text.newEvent : text.editEvent;
     get("event-submit").textContent = editing === null ? text.add : text.save;
     if (!errorNotice.hidden) errorNotice.textContent = text.chooseBoth;
